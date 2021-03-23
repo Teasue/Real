@@ -227,10 +227,6 @@ public:
 			(m[12] == n[12]) && (m[13] == n[13]) && (m[14] == n[14]) && (m[15] == n[15]);
 	}
 
-	inline float operator[](int index) const{
-		return m[index];
-	}
-
 
 
 

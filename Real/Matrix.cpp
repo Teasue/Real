@@ -123,7 +123,7 @@ Matrix4& Matrix4::invert(){
 		this->invertAffine();
 	else
 	{
-		this->invertGeneral();
+		this->invertAffine();
 	}
 
 	return *this;
