@@ -1,29 +1,26 @@
 #pragma once
-#include "Vector2.h"
-#include <windows.h>
+#include <SDL.h>
+#include <stdio.h>
+#include <string>
+#include <cmath>
+#include "Color.h"
 
 class RenderDevice{
-private:
-	int mWidth;
-	int mHeight;
-
-	HWND mHWnd;
-	HDC mHDC;
-	HBITMAP		mBitMap;
-	HBITMAP		mOldBitMap;
-	LPVOID		mFrameBuffer;
+public:
+	SDL_Window* gWindow;
+	SDL_Renderer* gRenderer;
 
 public:
-	RenderDevice() :mHWnd(NULL), mHDC(NULL), mBitMap(NULL), mOldBitMap(NULL), mWidth(800), mHeight(600) {};
-	RenderDevice(int w, int h) :mHWnd(NULL), mHDC(NULL), mBitMap(NULL), mOldBitMap(NULL), mWidth(w), mHeight(h) {};
+	RenderDevice() {
+		gWindow = NULL;
+		gRenderer = NULL;
+	};
 	~RenderDevice() {};
 
+	bool SDLInit();
+	void SDLClose();
 
-	bool IsKeyDown(int key);
-	inline LPVOID GetFramebuffer() { return mFrameBuffer; }
-	void Init(int w, int h);
-	void Dispatch();
-	void Update();
-	void Close();
+	void DrawPixel(int x, int y, Color c = C_WRITE);
+	void DrawLine(int x0, int y0, int x1, int y1, Color c = C_WRITE);
 };
 

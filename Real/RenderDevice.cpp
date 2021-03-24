@@ -1,130 +1,70 @@
 #include "RenderDevice.h"
-#include<assert.h> 
-#include<iostream>
+#include "Const.h"
 
-int KeysDown[512];
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	switch (msg)
-	{
-	case WM_CLOSE: KeysDown[27 & 511] = 1; break;
-	case WM_KEYDOWN:KeysDown[wparam & 511] = 1; break;
-	case WM_KEYUP:KeysDown[wparam & 511] = 0; break;
-	default:return DefWindowProc(hwnd, msg, wparam, lparam);
+
+bool RenderDevice::SDLInit() {
+	bool success = true;
+
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	else {
+		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
+			printf("Warning: Linear texture filtering not enabled!");
+
+		gWindow = SDL_CreateWindow("Real Engine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+		if (gWindow == NULL) {
+			printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
+			success = false;
+		}
+		else {
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			if (gRenderer == NULL) {
+				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+				success = false;
+			}
+		}
 	}
 
-	return 0;
+	return success;
 }
 
-void RenderDevice::Init(int w, int h)
-{
-	mWidth = w;
-	mHeight = h;
-	static TCHAR szAppName[] = TEXT("Real Rendering");
-	WNDCLASS wndclass; //创建窗口类对象
-	Close();
+void RenderDevice::SDLClose(){
+	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	gRenderer = NULL;
 
-	wndclass.style = CS_BYTEALIGNCLIENT;
-	wndclass.lpfnWndProc = WndProc;  /*这里将回到函数的名字赋值用以windows后面回调*/
-	wndclass.cbClsExtra = 0;  //附加参数，通常情况下为0
-	wndclass.cbWndExtra = 0;  //附加参数，通常情况下为0
-	wndclass.hIcon = LoadIcon(NULL, IDI_APPLICATION); /*窗口图标，LoadIcon()是加载图标，这里是加载一个系统资源图标，LoadIcon()的原型是HICON LoadIcon(HINSTANCE, LPCSTR);*/
-	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);  /*加载鼠标，同上相似*/
-	wndclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);  /*窗口画刷，这里是使用的白色画刷，所以创建出来的窗口的背景颜色则是白色的*/
-	wndclass.lpszMenuName = NULL;  //窗口菜单名称，这里没有菜单，设为NULL
-	wndclass.lpszClassName = szAppName;  //窗口类名称，这个窗口类名称可作为这个窗口的唯一标识
-
-	assert(RegisterClass(&wndclass));
-
-	mHWnd = CreateWindow(szAppName,    //窗口类名
-		TEXT("SoftRendering"),    //窗口标题，会在窗口的左上角标题栏显示
-		WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL, //窗口风格
-		0,  //窗口左上角x位置，这里使用的系统默认值，可自定义
-		0,  //窗口左上角y位置
-		mWidth,  //窗口的宽度
-		mHeight,  //窗口的高度
-		NULL, //该窗口的父窗口或所有者窗口的句柄，这里用不到，设为NULL
-		NULL, //窗口菜单句柄，这里没有菜单，设置为NULL
-		wndclass.hInstance, //窗口句柄
-		NULL  //传递给窗口WM_CREATE消息的一个参数，这里不用，设置为NULL
-	);
-
-	assert(mHWnd);
-
-	BITMAPINFO bitmap = { { sizeof(BITMAPINFOHEADER), mWidth, -mHeight, 1, 32, BI_RGB,
-		mWidth * mHeight * 4, 0, 0, 0, 0 } };
-	RECT rect = { 0, 0, w, h };
-
-	HDC hDC = GetDC(mHWnd);
-	mHDC = CreateCompatibleDC(hDC);
-	ReleaseDC(mHWnd, hDC);
-	mBitMap = CreateDIBSection(mHDC, &bitmap, DIB_RGB_COLORS, &mFrameBuffer, 0, 0);
-	assert(mBitMap);
-	mOldBitMap = (HBITMAP)SelectObject(mHDC, mBitMap);
-
-	AdjustWindowRect(&rect, GetWindowLong(mHWnd, GWL_STYLE), 0);
-
-	int wx = rect.right - rect.left;
-	int wy = rect.bottom - rect.top;
-	int sx = (GetSystemMetrics(SM_CXSCREEN) - wx) / 2;
-	int sy = (GetSystemMetrics(SM_CYSCREEN) - wy) / 2;
-	if (sy < 0) sy = 0;
-	SetWindowPos(mHWnd, NULL, sx, sy, wx, wy, (SWP_NOCOPYBITS | SWP_NOZORDER | SWP_SHOWWINDOW));
-
-	SetForegroundWindow(mHWnd);
-	ShowWindow(mHWnd, SW_NORMAL);
-	Dispatch();
-
-	memset(mFrameBuffer, 0, mWidth * mHeight * 4);
-	memset(KeysDown, 0, sizeof(int) * 512);
+	SDL_Quit();
 }
 
-void RenderDevice::Dispatch()
-{
-	MSG msg;
-	while (1)
-	{
-		if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) break;
-		if (!GetMessage(&msg, NULL, 0, 0)) break;
-		DispatchMessage(&msg);
+void RenderDevice::DrawPixel(int x, int y, Color c = C_WRITE) {
+	// 从左下角开始
+	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+	SDL_RenderDrawPoint(gRenderer, x, SCREEN_HEIGHT - 1 - y);
+}
+
+void RenderDevice::DrawLine(int x0, int y0, int x1, int y1, Color c = C_WRITE){
+	int x, y;
+
+	if (x0 == x1) {
+		int offset = y0 >= y1 ? -1 : 1;
+		for (y = y0; y != y1; y += offset)
+			DrawPixel(x0, y, c);
+
+		DrawPixel(x1, y1, c);
 	}
-}
+	else if (y0 == y1) {
+		int offset = x0 >= x1 ? -1 : 1;
+		for (x = x0; x != x1; x += offset)
+			DrawPixel(x, y0, c);
 
-void RenderDevice::Update()
-{
-	HDC dc = GetDC(mHWnd);
-	BitBlt(dc, 0, 0, mWidth, mHeight, mHDC, 0, 0, SRCCOPY);
-	ReleaseDC(mHWnd, dc);
-	Dispatch();
-}
-
-void RenderDevice::Close()
-{
-	if (mHDC != NULL)
-	{
-		if (mOldBitMap)
-			SelectObject(mHDC, mOldBitMap);
-
-		mOldBitMap = NULL;
-		DeleteDC(mHDC);
-		mHDC = NULL;
+		DrawPixel(x1, y1, c);
 	}
-
-	if (mBitMap != NULL)
-	{
-		DeleteObject(mBitMap);
-		mBitMap = NULL;
+	else {
+		int dx = x0 > x1 ? x0 - x1 : x1 - x0;
+		int dy = y0 > y1 ? y0 - y1 : y1 - y0;
 	}
-
-	if (mHWnd != NULL)
-	{
-		CloseWindow(mHWnd);
-		mHWnd = NULL;
-	}
-}
-
-bool RenderDevice::IsKeyDown(int key)
-{
-	return KeysDown[key & 511] == 1;
 }
