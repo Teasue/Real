@@ -28,6 +28,9 @@ int main(int argc, char* args[]){
 			for (int i = 0; i < SCREEN_HEIGHT; i++)
 				rd.DrawPixel(SCREEN_WIDTH / 2, i);
 
+			rd.DrawLine(0, 0, 100, 200);
+			rd.DrawLine(200, 200, 600, 400);
+
 			SDL_RenderPresent(rd.gRenderer);
 		}
 	}

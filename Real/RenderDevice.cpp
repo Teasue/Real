@@ -40,14 +40,14 @@ void RenderDevice::SDLClose(){
 	SDL_Quit();
 }
 
-void RenderDevice::DrawPixel(int x, int y, Color c = C_WRITE) {
+void RenderDevice::DrawPixel(int x, int y, Color c) {
 	// 从左下角开始
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 	SDL_RenderDrawPoint(gRenderer, x, SCREEN_HEIGHT - 1 - y);
 }
 
-void RenderDevice::DrawLine(int x0, int y0, int x1, int y1, Color c = C_WRITE){
-	int x, y;
+void RenderDevice::DrawLine(int x0, int y0, int x1, int y1, Color c){
+	int x, y, tem = 0;
 
 	if (x0 == x1) {
 		int offset = y0 >= y1 ? -1 : 1;
@@ -66,5 +66,34 @@ void RenderDevice::DrawLine(int x0, int y0, int x1, int y1, Color c = C_WRITE){
 	else {
 		int dx = x0 > x1 ? x0 - x1 : x1 - x0;
 		int dy = y0 > y1 ? y0 - y1 : y1 - y0;
+
+		if (dx >= dy) {
+			if (x0 > x1)
+				swap(x0, x1);
+
+			for (x = x0, y = y0; x <= x1; x++) {
+				DrawPixel(x, y, c);
+				tem += dy;
+				if (tem >= dx) {
+					tem -= dx;
+					y += (y1 >= y0) ? 1 : -1;
+				}
+			}
+		}
+		else {
+			if (y0 > y1)
+				swap(y0, y1);
+
+			for (y = y0, x = x0; y <= y1; y++) {
+				DrawPixel(x, y, c);
+				tem += dx;
+				if (tem >= dy) {
+					tem -= dy;
+					x += (x1 >= x0) ? 1 : -1;
+				}
+			}
+		}
+
+		DrawPixel(x1, y1, c);
 	}
 }

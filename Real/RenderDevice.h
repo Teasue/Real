@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include "Color.h"
+#include "Const.h"
 
 class RenderDevice{
 public:
