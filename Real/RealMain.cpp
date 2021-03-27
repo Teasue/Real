@@ -28,8 +28,16 @@ int main(int argc, char* args[]){
 			for (int i = 0; i < SCREEN_HEIGHT; i++)
 				rd.DrawPixel(SCREEN_WIDTH / 2, i);
 
-			rd.DrawLine(0, 0, 100, 200);
-			rd.DrawLine(200, 200, 600, 400);
+			Point p0 = Point(-100, -100);
+			Point p1 = Point(120, 220);
+			Point p2 = Point(900, 1000);
+			//rd.DrawLine(&p0, &p1);
+			if (rd.CohenSutherlandLineClip(&p0, &p1)){
+				rd.DrawLine(&p0, &p1);
+			}
+			if (rd.CohenSutherlandLineClip(&p2, &p1)) {
+				rd.DrawLine(&p2, &p1);
+			}
 
 			SDL_RenderPresent(rd.gRenderer);
 		}

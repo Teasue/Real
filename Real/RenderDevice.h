@@ -5,6 +5,7 @@
 #include <cmath>
 #include "Color.h"
 #include "Const.h"
+#include "Vector2.h"
 
 class RenderDevice{
 public:
@@ -22,6 +23,8 @@ public:
 	void SDLClose();
 
 	void DrawPixel(int x, int y, Color c = C_WRITE);
-	void DrawLine(int x0, int y0, int x1, int y1, Color c = C_WRITE);
+	void DrawLine(Point* p0, Point* p1, Color c = C_WRITE);
+	bool CohenSutherlandLineClip(Point* p0, Point* p1, Color c = C_WRITE);
+	int CohenSutherEncode(Point* p, Point* lb, Point* rt);
 };
 
