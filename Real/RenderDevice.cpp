@@ -47,6 +47,9 @@ void RenderDevice::DrawPixel(int x, int y, Color c) {
 }
 
 void RenderDevice::DrawLine(Point* p0, Point* p1, Color c){
+	if (!CohenSutherlandLineClip(p0, p1, c))
+		return;
+
 	int x, y, tem = 0;
 	int x0 = p0->x;
 	int y0 = p0->y;
@@ -103,6 +106,30 @@ void RenderDevice::DrawLine(Point* p0, Point* p1, Color c){
 		}
 
 		DrawPixel(x1, y1, c);
+	}
+}
+
+// ScanLine DrawTriangle
+void RenderDevice::DrawTriangle(Point* p0, Point* p1, Point* p2, Color c)
+{
+	if (p0->y < p1->y)
+		swap(p0, p1);
+
+	if (p0->y < p2->y)
+		swap(p0, p2);
+	
+	if (p1->y < p2->y)
+		swap(p1, p2);
+
+	if (p1->y == p2->y)
+		FillBottomTriangle(p0, p1, p2, c);
+	else if (p0->y == p1->y)
+		FillTopTriangle(p0, p1, p2, c);
+	else {
+		int x3 = p0->x + (float)(p1->y - p0->y) / (p2->y - p0->y) * (p2->x - p0->x);
+		Point p3 = Point(x3, p1->y);
+		FillBottomTriangle(p0, p1, &p3, c);
+		FillTopTriangle(p1, &p3, p2, c);
 	}
 }
 
@@ -188,5 +215,43 @@ int RenderDevice::CohenSutherEncode(Point* p, Point* lb, Point* rt){
 		code |= LINE_TOP;
 
 	return code;
+}
+
+void RenderDevice::FillBottomTriangle(Point* p0, Point* p1, Point* p2, Color c){
+	float k01 = (float)(p0->x - p1->x) / (p0->y - p1->y);
+	float k02 = (float)(p0->x - p2->x) / (p0->y - p2->y);
+
+	float scanX0 = p0->x;
+	float scanX1 = p0->x;
+	Point _p0, _p1;
+
+	for (int scanY = p0->y; scanY >= p1->y; scanY--) {
+		_p0.x = (int)scanX0;
+		_p0.y = scanY;
+		_p1.x = (int)scanX1;
+		_p1.y = scanY;
+		DrawLine(&_p0, &_p1, c);
+		scanX0 -= k01;
+		scanX1 -= k02;
+	}
+}
+
+void RenderDevice::FillTopTriangle(Point* p0, Point* p1, Point* p2, Color c){
+	float k12 = (float)(p2->x - p1->x) / (p2->y - p1->y);
+	float k02 = (float)(p0->x - p2->x) / (p0->y - p2->y);
+
+	float scanX0 = p2->x;
+	float scanX1 = p2->x;
+	Point _p0, _p1;
+
+	for (int scanY = p2->y; scanY <= p0->y; scanY++) {
+		_p0.x = (int)scanX0;
+		_p0.y = scanY;
+		_p1.x = (int)scanX1;
+		_p1.y = scanY;
+		DrawLine(&_p0, &_p1, c);
+		scanX1 += k12;
+		scanX0 += k02;
+	}
 }
 
