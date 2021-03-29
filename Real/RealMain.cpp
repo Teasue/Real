@@ -31,10 +31,13 @@ int main(int argc, char* args[]){
 			Point p0 = Point(0, 0);
 			Point p1 = Point(120, 220);
 			Point p2 = Point(700, 400);
+			Point p3 = Point(700, 700);
 			rd.DrawLine(&p0, &p1);
 			rd.DrawLine(&p2, &p1);
 			rd.DrawLine(&p2, &p0);
-			rd.DrawTriangle(&p2, &p1, &p0);
+			//rd.DrawLine(&p3, &p0);
+			//rd.ScanLineDrawTriangle(&p2, &p1, &p0);
+			rd.BarycentricTriangle(&p2, &p1, &p0);
 
 			SDL_RenderPresent(rd.gRenderer);
 		}

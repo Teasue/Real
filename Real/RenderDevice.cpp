@@ -109,8 +109,7 @@ void RenderDevice::DrawLine(Point* p0, Point* p1, Color c){
 	}
 }
 
-// ScanLine DrawTriangle
-void RenderDevice::DrawTriangle(Point* p0, Point* p1, Point* p2, Color c)
+void RenderDevice::ScanLineDrawTriangle(Point* p0, Point* p1, Point* p2, Color c)
 {
 	if (p0->y < p1->y)
 		swap(p0, p1);
@@ -127,9 +126,41 @@ void RenderDevice::DrawTriangle(Point* p0, Point* p1, Point* p2, Color c)
 		FillTopTriangle(p0, p1, p2, c);
 	else {
 		int x3 = p0->x + (float)(p1->y - p0->y) / (p2->y - p0->y) * (p2->x - p0->x);
-		Point p3 = Point(x3, p1->y);
+		Point p3(x3, p1->y);
 		FillBottomTriangle(p0, p1, &p3, c);
 		FillTopTriangle(p1, &p3, p2, c);
+	}
+}
+
+void RenderDevice::BarycentricTriangle(Point* p0, Point* p1, Point* p2, Color c){
+	Vector2 bbmin(INFINITY, INFINITY);
+	Vector2 bbmax(FLT_EPSILON, FLT_EPSILON);
+	Vector2 clamp(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
+
+	bbmin.x = fmax(0.f, fmin(bbmin.x, p0->x));
+	bbmin.y = fmax(0.f, fmin(bbmin.y, p0->y));
+	bbmax.x = fmin(clamp.x, fmax(bbmax.x, p0->x));
+	bbmax.y = fmin(clamp.y, fmax(bbmax.y, p0->y));
+
+	bbmin.x = fmax(0.f, fmin(bbmin.x, p1->x));
+	bbmin.y = fmax(0.f, fmin(bbmin.y, p1->y));
+	bbmax.x = fmin(clamp.x, fmax(bbmax.x, p1->x));
+	bbmax.y = fmin(clamp.y, fmax(bbmax.y, p1->y));
+
+	bbmin.x = fmax(0.f, fmin(bbmin.x, p2->x));
+	bbmin.y = fmax(0.f, fmin(bbmin.y, p2->y));
+	bbmax.x = fmin(clamp.x, fmax(bbmax.x, p2->x));
+	bbmax.y = fmin(clamp.y, fmax(bbmax.y, p2->y));
+
+	Point p;
+	for (p.x = bbmin.x; p.x <= bbmax.x; p.x++) {
+		for (p.y = bbmin.y; p.y <= bbmax.y; p.y++) {
+			Vector3 _p = BarycentricPoint(p0, p1, p2, &p);
+			if (_p.x < 0 || _p.y < 0 || _p.z < 0)
+				continue;
+
+			DrawPixel(p.x, p.y);
+		}
 	}
 }
 
@@ -180,13 +211,13 @@ bool RenderDevice::CohenSutherlandLineClip(Point* p0, Point* p1, Color c){
 			if (code == code0) {
 				x0 = x;
 				y0 = y;
-				Point p = Point(x0, y0);
+				Point p(x0, y0);
 				code0 = CohenSutherEncode(&p, &lb, &rt);
 			}
 			else {
 				x1 = x;
 				y1 = y;
-				Point p = Point(x1, y1);
+				Point p(x1, y1);
 				code1 = CohenSutherEncode(&p, &lb, &rt);
 			}
 		}
@@ -253,5 +284,16 @@ void RenderDevice::FillTopTriangle(Point* p0, Point* p1, Point* p2, Color c){
 		scanX1 += k12;
 		scanX0 += k02;
 	}
+}
+
+Vector3 RenderDevice::BarycentricPoint(Point* p0, Point* p1, Point* p2, Point* p){
+	Vector3 s0(p2->x - p0->x, p1->x - p0->x, p0->x - p->x);
+	Vector3 s1(p2->y - p0->y, p1->y - p0->y, p0->y - p->y);
+	Vector3 u = Vector3::Cross(s0, s1);
+	
+	if (abs(u.z) < 1)
+		return Vector3(-1, 1, 1);
+
+	return Vector3(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
 }
 
