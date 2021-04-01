@@ -1,6 +1,7 @@
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 #include "RenderDevice.h"
 #include "Const.h"
-
 
 
 bool RenderDevice::SDLInit() {
@@ -297,3 +298,38 @@ Vector3 RenderDevice::BarycentricPoint(Point* p0, Point* p1, Point* p2, Point* p
 	return Vector3(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
 }
 
+void RenderDevice::LoadObjFile() {
+	tinyobj::attrib_t attrib;
+	vector<tinyobj::shape_t> shapes;
+	vector<tinyobj::material_t> materials;
+	string err;
+	string warn;
+	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "SourceFiles/utah-teapot.obj", NULL, true);
+	if (!ret) {
+		printf("Failed to load/parse .obj.\n");
+		return;
+	}
+	for (size_t i = 0; i < shapes.size(); i++) {
+		size_t index_offset = 0;
+		assert(shapes[i].mesh.num_face_vertices.size() == shapes[i].mesh.material_ids.size());
+
+		// For each face
+		for (size_t f = 0; f < shapes[i].mesh.num_face_vertices.size(); f++) {
+			size_t fnum = shapes[i].mesh.num_face_vertices[f];
+			// For each vertex in the face
+			for (size_t v = 0; v < fnum; v++) {
+				tinyobj::index_t idx = shapes[i].mesh.indices[index_offset + v];
+				tinyobj::index_t idx1 = shapes[i].mesh.indices[index_offset + (v + 1) % fnum];
+
+				int x0 = (attrib.vertices[3 * idx.vertex_index + 0]) * 8 + SCREEN_WIDTH / 2.;
+				int y0 = (attrib.vertices[3 * idx.vertex_index + 1]) * 8 + SCREEN_HEIGHT / 2.;
+				int x1 = (attrib.vertices[3 * idx1.vertex_index + 0]) * 8 + SCREEN_WIDTH / 2.;
+				int y1 = (attrib.vertices[3 * idx1.vertex_index + 1]) * 8 + SCREEN_HEIGHT / 2.;
+				Point p0(x0, y0);
+				Point p1(x1, y1);
+				DrawLine(&p0, &p1);
+			}
+			index_offset += fnum;
+		}
+	}
+}

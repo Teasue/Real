@@ -35,5 +35,7 @@ public:
 	void FillTopTriangle(Point* p0, Point* p1, Point* p2, Color c = C_WRITE);
 
 	Vector3 BarycentricPoint(Point* p0, Point* p1, Point* p2, Point* p);
+
+	void LoadObjFile();
 };
 
