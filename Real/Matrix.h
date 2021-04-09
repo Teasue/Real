@@ -182,7 +182,7 @@ public:
 		m[12] = m12;	m[13] = m13;	m[14] = m14;	m[15] = m15;
 	}
 
-	inline float operator[](int index) const {
+	inline float& operator[](int index) {
 		return m[index];
 	}
 

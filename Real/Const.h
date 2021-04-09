@@ -13,3 +13,6 @@ const int LINE_LEFT = 1;
 const int LINE_RIGHT = 2;
 const int LINE_BOTTOM = 4;
 const int LINE_TOP = 8;
+
+const float PROJECTION_VIEW_F = 1000;
+const float PROJECTION_VIEW_N = 0.3;

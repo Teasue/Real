@@ -1,17 +1,32 @@
 #pragma once
-#include "Color.h"
-#include "Vector2.h"
-#include "RenderDevice.h"
-
-using namespace std;
+#include "Matrix.h"
+#include "tgaimage.h"
+#include "Const.h"
 
 class Rasterizer {
-private:
+public:
+    Rasterizer(Matrix4* m_mvp, Matrix4* s_mvp, Matrix4* m_model, TGAImage* image, Vector3 lightDir, float* s_Buffer);
+    Rasterizer(const Rasterizer&);
+    ~Rasterizer() {};
+
+    Vector4 Vertex(int id, const Vector4& modelPts, const Vector3& uv, const Vector4& normalDir);
+    TGAColor Fragment(const Vector3& bar);
+
+    Matrix4 GetModelMatrix(float yaw);
+    Matrix4 GetViewMatrix(Vector3& eye);
+    Matrix4 GetProjectionMatrix(float aspect);
 
 public:
-	Rasterizer(RenderDevice* pcontext);
-	~Rasterizer() {};
+    Matrix3 uv;
+    Matrix4 norlmal;
+    Matrix4 clip;
 
-	void DrawPixel(int x, int y, Color& c);
-	void DrawLine(const Color& c1, const Vector2& v1, const Color& c2, const Vector2& v2);
+private:
+    TGAImage* tgaImage;
+    Matrix4 mvpM;
+    Matrix4 modelM;
+    Matrix4 shadowM;
+    Vector3 lightDir;
+    float* shadowBuffer;
+    bool depthPass;
 };
